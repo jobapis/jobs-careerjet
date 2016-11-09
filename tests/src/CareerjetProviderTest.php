@@ -2,35 +2,30 @@
 
 use JobApis\Jobs\Client\Collection;
 use JobApis\Jobs\Client\Job;
-use JobApis\Jobs\Client\Providers\ZiprecruiterProvider;
-use JobApis\Jobs\Client\Queries\ZiprecruiterQuery;
+use JobApis\Jobs\Client\Providers\CareerjetProvider;
+use JobApis\Jobs\Client\Queries\CareerjetQuery;
 use Mockery as m;
 
-class ZiprecruiterProviderTest extends \PHPUnit_Framework_TestCase
+class CareerjetProviderTest extends \PHPUnit_Framework_TestCase
 {
     public function setUp()
     {
-        $this->query = m::mock('JobApis\Jobs\Client\Queries\ZiprecruiterQuery');
+        $this->query = m::mock('JobApis\Jobs\Client\Queries\CareerjetQuery');
 
-        $this->client = new ZiprecruiterProvider($this->query);
+        $this->client = new CareerjetProvider($this->query);
     }
 
     public function testItCanGetDefaultResponseFields()
     {
         $fields = [
-            'source',
-            'id',
-            'name',
-            'snippet',
-            'category',
-            'posted_time',
-            'posted_time_friendly',
             'url',
-            'location',
-            'city',
-            'state',
-            'country',
-            'hiring_company',
+            'title',
+            'locations',
+            'company',
+            'salary',
+            'date',
+            'description',
+            'site',
         ];
         $this->assertEquals($fields, $this->client->getDefaultResponseFields());
     }
@@ -47,29 +42,26 @@ class ZiprecruiterProviderTest extends \PHPUnit_Framework_TestCase
         $results = $this->client->createJobObject($payload);
 
         $this->assertInstanceOf(Job::class, $results);
-        $this->assertEquals($payload['name'], $results->getTitle());
-        $this->assertEquals($payload['name'], $results->getName());
-        $this->assertEquals($payload['snippet'], $results->getDescription());
-        $this->assertEquals($payload['hiring_company']['name'], $results->getCompanyName());
+        $this->assertEquals($payload['title'], $results->getTitle());
+        $this->assertEquals($payload['title'], $results->getName());
+        $this->assertEquals($payload['description'], $results->getDescription());
+        $this->assertEquals($payload['company'], $results->getCompanyName());
         $this->assertEquals($payload['url'], $results->getUrl());
     }
 
-    /**
-     * Integration test for the client's getJobs() method.
-     */
     public function testItCanGetJobs()
     {
         $options = [
-            'search' => uniqid(),
+            'keywords' => uniqid(),
             'location' => uniqid(),
-            'api_key' => uniqid(),
+            'affid' => uniqid(),
         ];
 
         $guzzle = m::mock('GuzzleHttp\Client');
 
-        $query = new ZiprecruiterQuery($options);
+        $query = new CareerjetQuery($options);
 
-        $client = new ZiprecruiterProvider($query);
+        $client = new CareerjetProvider($query);
 
         $client->setClient($guzzle);
 
@@ -100,18 +92,18 @@ class ZiprecruiterProviderTest extends \PHPUnit_Framework_TestCase
      */
     public function testItCanGetJobsFromApi()
     {
-        if (!getenv('API_KEY')) {
+        if (!getenv('AFFILIATE_ID')) {
             $this->markTestSkipped('API_KEY not set. Real API call will not be made.');
         }
 
         $keyword = 'engineering';
 
-        $query = new ZiprecruiterQuery([
-            'search' => $keyword,
-            'api_key' => getenv('API_KEY'),
+        $query = new CareerjetQuery([
+            'keywords' => $keyword,
+            'affid' => getenv('AFFILIATE_ID'),
         ]);
 
-        $client = new ZiprecruiterProvider($query);
+        $client = new CareerjetProvider($query);
 
         $results = $client->getJobs();
 
@@ -124,20 +116,14 @@ class ZiprecruiterProviderTest extends \PHPUnit_Framework_TestCase
 
     private function createJobArray() {
         return [
-            'source' => uniqid(),
-            'id' => uniqid(),
-            'name' => uniqid(),
-            'location' => uniqid(),
-            'snippet' => uniqid(),
-            'category' => uniqid(),
-            'hiring_company' => [
-                'url' => uniqid(),
-                'name' => uniqid(),
-            ],
-            'posted_time' => '2015-'.rand(1,12).'-'.rand(1,31),
             'url' => uniqid(),
-            'city' => null,
-            'state' => null,
+            'title' => uniqid(),
+            'locations' => uniqid(),
+            'company' => uniqid(),
+            'salary' => uniqid(),
+            'date' => '2015-'.rand(1,12).'-'.rand(1,31),
+            'description' => uniqid(),
+            'site' => uniqid(),
         ];
     }
 }
